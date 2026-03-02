@@ -1,27 +1,12 @@
 import json,re
 from datetime import datetime
-from pydantic import BaseModel
-from typing import Dict,List,Any
+from triphotel_model import TripHotel
+from trip_database import send_to_db
 
 def load_file(file):
     with open(file,"rb") as f:
         data=json.loads(f.read().decode())
         return data
-
-class TripHotel(BaseModel):
-    Name:str
-    Hotel_ID:int
-    Phone_No:int
-    Description:str
-    Open_Year:int
-    location:Dict[str,Any]
-    Nearby_location:List[Dict[str,str]]
-    Policy:List[Dict[str,str]]
-    Hotel_Facilities:Dict[str,Any]
-    Room:List[Dict[str,Any]]
-    Reviews:List[Dict[str,Any]]
-    Ratings:List[Dict[str,str]]
-    Recommendation:Dict[str,Any]
 
 def parser(d):
     result={}
@@ -88,17 +73,6 @@ def parser(d):
                 }
             policies.append(policy_dict)
 
-
-        # breakfast_dict={}
-        # breakfast_dict["title"]=policy.get("breakfast").get("title")
-        # for i in policy.get("breakfast").get("content"):
-        #     if i.get("title")=="Style":
-        #         breakfast_dict["Style"]=i.get("description")
-        #         break
-        #     elif i.get("title")=="Opening hours":
-        #         breakfast_dict["Opening Hours"]=i.get("description")
-        #         break
-        #     policies.append(breakfast_dict)
         result["Policy"] = policies
 
         #Facilities
@@ -197,9 +171,6 @@ def dump_cleaned_file(json_data):
     with open(f"trip_hotel_cleaned.json","wb") as f:
         f.write(json.dumps(json_data, indent=4,ensure_ascii=False).encode())
 
-def data_extracted(extracted_data):
-    with open(f"trip_hotel_{datetime.now().date()}.json","wb") as f:
-        f.write(json.dumps(extracted_data, indent=4,ensure_ascii=False).encode())
 
 file_name="trip_hotel.json"
 file_data=load_file(file_name)
@@ -211,9 +182,6 @@ dump_cleaned_file(main_data)
 extracted=parser(main_data)
 try:
     validated=TripHotel(**extracted)
-    data_extracted(validated.model_dump())
+    send_to_db(validated.model_dump())
 except Exception as e:
     print("Validation error: ",e)
-
-
-
